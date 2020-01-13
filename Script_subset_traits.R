@@ -1,4 +1,3 @@
-#teste
 ##Pacotes
 require(SYNCSA)
 
