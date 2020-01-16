@@ -38,6 +38,6 @@ histogram(~ t_UPGMA, type = "density", panel = function(x, ...) {
   panel.histogram(x, ...)
   xn <- seq(min(x), max(x), length.out = 100)
   yn <- dnorm(xn, mean(x), sd(x))
-  panel.lines(xn, yn, col = "red")
+  panel.lines(xn, yn, col = "red",lwd=2)
 })
      
