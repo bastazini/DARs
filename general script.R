@@ -33,6 +33,11 @@ t_UPGMA=c(1.692032,0.164992,0.236374,2.522750,2.177807,1.217202,0.518307,1.23068
           1.879309,1.327645,0.115830,0.772852,0.900989,2.388211,0.631931,1.397906,3.490375,
           2.117523,0.999126,1.245736,1.17918,1.254729,1.814528,0.827279,0.841603,0.608120,
           0.503343)
-hist(t_UPGMA)
-
+beanplot(t_UPGMA)
+histogram(~ t_UPGMA, type = "density", panel = function(x, ...) {
+  panel.histogram(x, ...)
+  xn <- seq(min(x), max(x), length.out = 100)
+  yn <- dnorm(xn, mean(x), sd(x))
+  panel.lines(xn, yn, col = "red")
+})
      
