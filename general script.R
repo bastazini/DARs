@@ -11,7 +11,7 @@ traits=decostand(traits, "standardize")
 ncomm <- nrow(comm)
 ncomm
 
-## Separar cada linha (comunidade) em um objeto da lista
+## Separar cada linha da matriz (comunidade) em um objeto da lista
 comm.list <- sapply(as.list(seq_len(ncomm)), function(x) comm[x, , drop = FALSE], simplify = FALSE)
 comm.list
 
