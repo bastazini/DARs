@@ -3,6 +3,7 @@ require(SYNCSA)
 
 ##Importando os dados
 comm=read.table(pipe("pbpaste"), sep="\t", header=T, row.names=1);comm
+##Transpoe a matriz, linhas tem que ser os sitios e as colunas as espécies
 comm=t(comm)
 traits=read.table(pipe("pbpaste"), sep="\t", header=T, row.names=1);traits
 
