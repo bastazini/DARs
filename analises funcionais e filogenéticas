@@ -1,0 +1,108 @@
+#Pacotes:
+require(picante)
+
+# Para abrir o arquivo do Jetz:
+bird.phylo=read.nexus(file.choose())
+
+# Para fazer o consenso:
+arvore.cons=consensus(bird.phylo,p=1, check.labels=T)
+
+# Para ultrametricizar:
+arv.passarinhos=compute.brlen(arvore.cons, method = "Grafen", power = 1) 
+
+# Para salvar como "tre":
+write.tree(arv.passarinhos,"filogenia")
+
+# Para abrir (abrir o arquivo "filogenia"):
+cons=read.tree(file.choose())
+
+# Para visualizar:
+plot(cons, cex=0.5)
+
+# Para checar valores:
+summary(cons)
+# Ou simplesmente:
+cons
+
+# Ver os nomes dos ramos terminais do newick
+list1<- (cons$tip.label)
+list1
+
+# Exportar nomes:
+write.csv(list1, file = "list.csv")
+
+###################################################################################
+###################################################################################
+
+# Analise funcional
+# Atributos funcionais (espécies nas linhas/atributos nas colunas)
+# Carregando matriz com 9 traits continuos:
+# traits9 <- read.table(choose.files(), head = T, sep="\t")
+# rownames(traits9) <- traits10[,1]
+# traits9
+
+traits8<-read.table("traits.txt",header=T)
+traits8
+colnames(traits8)
+
+# Analise via gupos funcionais
+# Grupos funcionais => Analise de Classificacao / Agrupamento / Cluster / etc.
+# Primeiro precisamos de uma matriz distancias entre os objetos que queremos agrupar (no caso, as especies)
+
+# Carregando o pacote vegan
+library(vegan)
+
+# Se a matriz eh composta apenas por variaveis continuas, primeiro eh preciso padronizar os dados!
+# O metodo abaixo padroniza cada coluna subtraindo pela media e divide pelo DP
+stand8 <- decostand(traits8[,-1], method = "standardize")
+
+# Outros metodos de padronizacao?
+#?decostand()
+
+# Exportar como csv:
+#write.csv(stand13, file = "trait.csv")
+
+# Escolhendo a distancia
+# Distancia Euclidiana (usada quando todas as variaveis [traits] sao quantitativos/contínuos)
+# Nao usar distancia Euclidiana com matrizes compostas (com variaveis binarias e continuas, por exemplo) ver Podani & Schmera (2006) On dendrogram-based measures of functional diversity. Oikos 115: 179-185.
+# outras distancias??
+#?vegdist()
+
+distances8 <- dist(stand8, method = "euclidian")
+# distances13
+# ATENCAO: a matriz de distancia (D) pode ser muito grande e, portanto, difIcil de visualizar
+
+# Analise de agrupamento
+# Usualmente o metodo pela media (average ou UPGMA) eh utilizado, mas existem muitos outros
+# Outros metodos de agrupamento?
+#?hclust()
+
+tree8<- hclust(distances8, method = "average")
+plot(tree8, xlab="", ylab="altura", main="Dendrograma", h= -1, cex=0.5)
+
+# Correlacao cofenetica - modo para verificar o quanto da estrutura da matriz de distancia (D) foi preservada no agrupamento
+# Valores maiores que 0.7 indicam boa preservacao (mas esse valor eh um tanto subjetivo!!)
+cophen <- cophenetic(tree8)
+cophen.correlation <- cor(distances8, cophen)
+cophen.correlation
+
+
+# calculo de medidas de Diversidade Funcional (medidas continuas)
+# FD (Petchey & Gaston 2002, 2006 Ecol Letters); MPD / MNTD (Webb et al. 2000) - usadas no contexto filogenetico mas podem ser facilmente utilizadas com distancias funcionais
+
+library(picante)
+
+# Eh preciso converter o dendrograma (um objeto "hclust") em um objeto "phylo"
+treep8 <- as.phylo(tree8)
+plot(treep8, cex=0.5)
+
+# Ver os nomes dos ramos terminais do newick
+list2<- (treep8$tip.label)
+list2
+
+# ver nomes no arquivo da comunidade:
+colnames(comm)
+
+# PD (SES)
+# ses.pd(samp, tree, null.model = ("taxa.labels", "richness", "frequency", "sample.pool", "phylogeny.pool", "independentswap", "trialswap"), runs = 999, iterations = 1000, ...)
+ses.pd(comm, treep8, null.model = "taxa.labels", runs = 999)
