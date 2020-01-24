@@ -20,7 +20,12 @@ traits.list <- sapply(as.list(seq_len(ncomm)), function(x) organize.syncsa(comm.
                                                                            traits = traits, 
                                                                            
                                                                            check.comm = TRUE)$traits, simplify = FALSE)
-##transformar as comunidades da lista em um matriz de traits
+##transformar uma das comunidades da lista em um matriz de traits
+traits1=as.matrix(traits.list[[1]]);traits1
+                      
+##ver as dimensões das matrizes dentro da lista
+as.data.frame(lapply(traits.list, dim))
+                      
 ##Indexa dentro [] qual comunidade será anlisada
 traits1=as.matrix(traits.list[[47]]);traits1
 teste=quality_funct_space (traits1, nbdim=8, metric="Euclidean", plot="quality_funct_space")
