@@ -20,6 +20,9 @@ traits.list <- sapply(as.list(seq_len(ncomm)), function(x) organize.syncsa(comm.
 
 																		   																		   check.comm = TRUE)$traits, simplify = FALSE)
 ##transformar uma das comunidades da lista em um matriz de traits
+traits1=as.matrix(traits.list[[1]]);traits1
+##ver as dimensões das matrizes dentro da lista
+as.data.frame(lapply(traits.list, dim))
 ##Indexa dentro [] qual mancha será anlisada
 traits1=as.matrix(traits.list[[1]]);traits1
 quality_funct_space (traits1, nbdim=7, metric="Euclidean", plot="quality_funct_space")
