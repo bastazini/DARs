@@ -1,12 +1,9 @@
 require(picante)
 require(FD)
-
-#define o numero máximo d eixos da PCoA que serão considerados
-#no exemplo 6
 eixos=6
 ses.FDiv <- function(x, a, null.model, iterations, runs, ...){
   indices <- FD::dbFD(x, a, m=eixos,...)
-  obs <- indices$FDiv
+  obs <- indices$FRic
   NULL.MODEL <- c("taxa.labels", "phylogeny.pool", "richness", "frequency", "independentswap", "trialswap")
   NULL.MODEL <- pmatch(null.model, NULL.MODEL)
   rand.row.matrix.int <- function(ma){
@@ -17,17 +14,17 @@ ses.FDiv <- function(x, a, null.model, iterations, runs, ...){
   if(NULL.MODEL == 1){ 
     # "taxa.labels"
     x.rand <- sapply(as.list(seq_len(runs)), function(z) rand.row.matrix.int(x), simplify = FALSE)
-    rand <- t(sapply(x.rand, function(X) FD::dbFD(X, a)$FDiv))
+    rand <- t(sapply(x.rand, function(X) FD::dbFD(X, a)$FRic))
   } else{
     if(NULL.MODEL == 2){
       # "phylogeny.pool"
       x.rand <- sapply(as.list(seq_len(runs)), function(z) rand.row.matrix.int(x), simplify = FALSE)
       comm.rand <- sapply(as.list(seq_len(runs)), function(z) picante::randomizeMatrix(a, null.model = "richness", iterations = iterations), simplify = FALSE)
-      rand <- t(sapply(as.list(seq_len(runs)), function(i) FD::dbFD(x.rand[[i]], comm.rand[[i]], ...)$FDiv))
+      rand <- t(sapply(as.list(seq_len(runs)), function(i) FD::dbFD(x.rand[[i]], comm.rand[[i]], ...)$FRic))
     } else{
       # "richness", "frequency", "independentswap" or "trialswap"
       comm.rand <- sapply(as.list(seq_len(runs)), function(z) picante::randomizeMatrix(a, null.model = null.model, iterations = iterations), simplify = FALSE)
-      rand <- t(sapply(comm.rand, function(A) FD::dbFD(x, A, ...)$FDiv))    
+      rand <- t(sapply(comm.rand, function(A) FD::dbFD(x, A, ...)$FRic))    
     }
   }
 
@@ -58,9 +55,9 @@ ses.FDiv <- function(x, a, null.model, iterations, runs, ...){
 # ... - Outros argumentos para dbFD
 
 # Exemplo
-ses.FDiv(dummy$trait, dummy$abun, null.model = "taxa.labels", iterations = 1000, runs = 10)
-ses.FDiv(dummy$trait, dummy$abun, null.model = "phylogeny.pool", iterations = 1000, runs = 10)
-ses.FDiv(dummy$trait, dummy$abun, null.model = "independentswap", iterations = 1000, runs = 10)
+ses.FRic(dummy$trait, dummy$abun, null.model = "taxa.labels", iterations = 1000, runs = 10)
+ses.FRic(dummy$trait, dummy$abun, null.model = "phylogeny.pool", iterations = 1000, runs = 10)
+ses.FRic(dummy$trait, dummy$abun, null.model = "independentswap", iterations = 1000, runs = 10)
 
 # Funcao conforme ses.mpd (um copia e cola)
 # Some os modelos:
