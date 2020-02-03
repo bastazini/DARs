@@ -1,8 +1,11 @@
 require(picante)
 require(FD)
 
+#define o numero máximo d eixos da PCoA que serão considerados
+#no exemplo 6
+eixos=6
 ses.FDiv <- function(x, a, null.model, iterations, runs, ...){
-  indices <- FD::dbFD(x, a, ...)
+  indices <- FD::dbFD(x, a, m=eixos,...)
   obs <- indices$FDiv
   NULL.MODEL <- c("taxa.labels", "phylogeny.pool", "richness", "frequency", "independentswap", "trialswap")
   NULL.MODEL <- pmatch(null.model, NULL.MODEL)
