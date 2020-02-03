@@ -65,4 +65,4 @@ ses.FRic(dummy$trait, dummy$abun, null.model = "independentswap", iterations = 1
 # - "taxa.labels" aleatoriza as linhas da matriz dos atributos (linhas inteiras), mantem os nomes originais (so muda os valores dentro da matriz) 
 # - "phylogeny.pool" usa o modelo "richness" para aleatorizar as comunidades e aleatoriza as linhas da matriz dos atributos (linhas inteiras), mantem os nomes originais (so muda os valores dentro da matriz)
 
-# Depois de aleatorizado eh recalculculado FDiv e calcula o SES conforme funcao ses.mpd
+# Depois de aleatorizado eh recalculculado FRic e calcula o SES conforme funcao ses.mpd
