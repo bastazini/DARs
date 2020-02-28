@@ -1,0 +1,68 @@
+require(picante)
+require(FD)
+eixos=6
+ses.FDiv <- function(x, a, null.model, iterations, runs, ...){
+  indices <- FD::dbFD(x, a, m=eixos,...)
+  obs <- indices$FRic
+  NULL.MODEL <- c("taxa.labels", "phylogeny.pool", "richness", "frequency", "independentswap", "trialswap")
+  NULL.MODEL <- pmatch(null.model, NULL.MODEL)
+  rand.row.matrix.int <- function(ma){
+    res <- ma[sample(seq_len(nrow(ma))),, drop = FALSE]
+    rownames(res) <- rownames(ma)
+    return(res)
+  }
+  if(NULL.MODEL == 1){ 
+    # "taxa.labels"
+    x.rand <- sapply(as.list(seq_len(runs)), function(z) rand.row.matrix.int(x), simplify = FALSE)
+    rand <- t(sapply(x.rand, function(X) FD::dbFD(X, a)$FRic))
+  } else{
+    if(NULL.MODEL == 2){
+      # "phylogeny.pool"
+      x.rand <- sapply(as.list(seq_len(runs)), function(z) rand.row.matrix.int(x), simplify = FALSE)
+      comm.rand <- sapply(as.list(seq_len(runs)), function(z) picante::randomizeMatrix(a, null.model = "richness", iterations = iterations), simplify = FALSE)
+      rand <- t(sapply(as.list(seq_len(runs)), function(i) FD::dbFD(x.rand[[i]], comm.rand[[i]], ...)$FRic))
+    } else{
+      # "richness", "frequency", "independentswap" or "trialswap"
+      comm.rand <- sapply(as.list(seq_len(runs)), function(z) picante::randomizeMatrix(a, null.model = null.model, iterations = iterations), simplify = FALSE)
+      rand <- t(sapply(comm.rand, function(A) FD::dbFD(x, A, ...)$FRic))    
+    }
+  }
+
+
+  rand.mean <- apply(X = rand, MARGIN = 2, FUN = mean, na.rm = TRUE)
+  rand.sd <- apply(X = rand, MARGIN = 2, FUN = sd, na.rm = TRUE)
+  obs.z <- (obs - rand.mean)/rand.sd
+
+  obs.rank <- apply(X = rbind(obs, rand), MARGIN = 2, FUN = rank)[1, ]
+  obs.rank <- ifelse(is.na(rand.mean), NA, obs.rank)
+  results <- data.frame(ntaxa = specnumber(a),
+             obs,
+             rand.mean,
+             rand.sd,
+             obs.rank,
+             obs.z,
+             obs.p = obs.rank/(runs + 1),
+             row.names = row.names(a))
+  return(results)
+}
+
+# Argumentos
+# x - ver dbFD. NAO PODE SER UMA MATRIZ DE DISTANCIAS
+# a - ver dbFD
+# null.model - ver randomizeMatrix e ses.mpd. Exceto "sample.pool"
+# iterations - ver randomizeMatrix
+# runs - Number of randomizations
+# ... - Outros argumentos para dbFD
+
+# Exemplo
+ses.FRic(dummy$trait, dummy$abun, null.model = "taxa.labels", iterations = 1000, runs = 10)
+ses.FRic(dummy$trait, dummy$abun, null.model = "phylogeny.pool", iterations = 1000, runs = 10)
+ses.FRic(dummy$trait, dummy$abun, null.model = "independentswap", iterations = 1000, runs = 10)
+
+# Funcao conforme ses.mpd (um copia e cola)
+# Some os modelos:
+# - "richness", "frequency", "independentswap" e "trialswap" aleatoriaza as comunidades usando a funcao randomizeMatrix
+# - "taxa.labels" aleatoriza as linhas da matriz dos atributos (linhas inteiras), mantem os nomes originais (so muda os valores dentro da matriz) 
+# - "phylogeny.pool" usa o modelo "richness" para aleatorizar as comunidades e aleatoriza as linhas da matriz dos atributos (linhas inteiras), mantem os nomes originais (so muda os valores dentro da matriz)
+
+# Depois de aleatorizado eh recalculculado FRic e calcula o SES conforme funcao ses.mpd
