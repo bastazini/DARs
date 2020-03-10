@@ -1,0 +1,207 @@
+################################################################################################################################
+################################################################################################################################
+
+##Iniciar colando a fun??o "quality_funct_space" (t? como txt na pasta) no console e rodando ela
+
+
+##Pacotes
+require(SYNCSA)
+require(vegan)
+
+##Importando os dados
+## eu fa?o deste jeito, mas tanto faz, o importante ? que os sitios sejam rows e  as sp colunas
+#comm=read.table(pipe("pbpaste"), sep="\t", header=T, row.names=1);comm
+
+#Aqui species s?o rows e traits  col
+#traits=read.table(pipe("pbpaste"), sep="\t", header=T, row.names=1);traits
+
+#Importar dados (row names - use first column)
+
+#Verificar se esta ok:
+str(traits)
+str(comm)
+colnames(traits)
+colnames(comm)
+
+###padronizar os traits (centraliza?ao normalizacao)
+traits=decostand(traits, "standardize")
+
+##criar o numero de colunas dentro da lista:
+ncomm <- nrow(comm)
+ncomm
+
+#Todas as comunidades por traits v?o estar na lista
+## Separar cada linha da matriz (comunidade) em um objeto da lista
+comm.list <- sapply(as.list(seq_len(ncomm)), function(x) comm[x, , drop = FALSE], simplify = FALSE)
+comm.list
+
+# Montar uma matriz de atributos para cada comunidade
+traits.list <- sapply(as.list(seq_len(ncomm)), function(x) organize.syncsa(comm.list[[x]], 
+                                                                           traits = traits, 
+                                                                           
+                                                                           check.comm = TRUE)$traits, simplify = FALSE)
+
+##Se quiser ver as dimens?es das matrizes dentro da lista:
+as.data.frame(lapply(traits.list, dim))
+
+#para anlisar cada comunidade muda o numero dentro do []; o numero equivale a sequencia de cada comunidade na tabela
+##transformar uma das comunidades da lista em um matriz de traits:
+traits1=as.matrix(traits.list[[33]]);traits1
+
+#Isso aqui vai testar o espa?o para comunidade em quest?o
+#Se o plot nao aparecer na tela, ? pq est? salvo na pasta em que estas trabalhando
+teste=quality_funct_space (traits1, nbdim=8, metric="Euclidean", plot="quality_funct_space")
+
+#resultado do mean square para a melhor cluster e as dimensoes:
+teste$meanSD
+
+###################################################################################################
+###################################################################################################
+
+##Calcular FRic:
+library(FD)
+
+#Funcao:
+fric_grass_1 <- dbFD(traits_1, comm_1, calc.FRic = TRUE, m = 6)
+fric_grass_1
+
+###################################################################################################
+###################################################################################################
+
+# Analise via gupos funcionais
+# Grupos funcionais => Analise de Classificacao / Agrupamento / Cluster / etc.
+# Primeiro precisamos de uma matriz distancias entre os objetos que queremos agrupar (no caso, as especies)
+
+# Carregando o pacote vegan
+library(vegan)
+
+# Se a matriz eh composta apenas por variaveis continuas, primeiro eh preciso padronizar os dados!
+# O metodo abaixo padroniza cada coluna subtraindo pela media e divide pelo DP
+stand8 <- decostand(traits_1[,-1], method = "standardize")
+
+# Escolhendo a distancia
+# Distancia Euclidiana (usada quando todas as variaveis [traits] sao quantitativos/cont??nuos)
+# Nao usar distancia Euclidiana com matrizes compostas (com variaveis binarias e continuas, por exemplo) ver Podani & Schmera (2006) On dendrogram-based measures of functional diversity. Oikos 115: 179-185.
+# outras distancias??
+#?vegdist()
+
+distances8 <- dist(stand8, method = "euclidian")
+# distances8
+
+# Analise de agrupamento
+# Usualmente o metodo pela media (average ou UPGMA) eh utilizado, mas existem muitos outros
+# Outros metodos de agrupamento?
+#?hclust()
+
+tree8<- hclust(distances8, method = "average")
+plot(tree8, xlab="", ylab="altura", main="Dendrograma", h= -1, cex=0.5)
+
+# Correlacao cofenetica - modo para verificar o quanto da estrutura da matriz de distancia (D) foi preservada no agrupamento
+# Valores maiores que 0.7 indicam boa preservacao (mas esse valor eh um tanto subjetivo!!)
+cophen <- cophenetic(tree8)
+cophen.correlation <- cor(distances8, cophen)
+cophen.correlation
+
+
+# calculo de medidas de Diversidade Funcional (medidas continuas)
+# FD (Petchey & Gaston 2002, 2006 Ecol Letters); MPD / MNTD (Webb et al. 2000) - usadas no contexto filogenetico mas podem ser facilmente utilizadas com distancias funcionais
+
+library(picante)
+
+# Eh preciso converter o dendrograma (um objeto "hclust") em um objeto "phylo"
+treep8 <- as.phylo(tree8)
+plot(treep8, cex=0.5)
+
+# Ver os nomes dos ramos terminais do newick
+list2<- (treep8$tip.label)
+list2
+
+# ver nomes no arquivo da comunidade:
+colnames(comm_1)
+
+# Diversidade filogenetica de Rao
+#rao_comm<-raoD(comm,treep8)$Dkk
+#rao_comm
+
+# PD (SES)
+# ses.pd(samp, tree, null.model = ("taxa.labels", "richness", "frequency", "sample.pool", "phylogeny.pool", "independentswap", "trialswap"), runs = 999, iterations = 1000, ...)
+ses.pd(comm_1, treep8, include.root=TRUE, null.model = "taxa.labels", runs = 999)
+
+
+#########################################################################################################
+#########################################################################################################
+
+## Calculo do SES FRic usando o metodo de Plass-Johnson et al (2016)
+
+##Iniciar colando a fun??o "quality_funct_space" (t? como txt na pasta) no console e rodando ela
+
+require(picante)
+require(FD)
+
+eixos=6
+ses.FDiv <- function(x, a, null.model, iterations, runs, ...){
+  indices <- FD::dbFD(x, a, m=eixos,...)
+  obs <- indices$FRic
+  NULL.MODEL <- c("taxa.labels", "phylogeny.pool", "richness", "frequency", "independentswap", "trialswap")
+  NULL.MODEL <- pmatch(null.model, NULL.MODEL)
+  rand.row.matrix.int <- function(ma){
+    res <- ma[sample(seq_len(nrow(ma))),, drop = FALSE]
+    rownames(res) <- rownames(ma)
+    return(res)
+  }
+  if(NULL.MODEL == 1){ 
+    # "taxa.labels"
+    x.rand <- sapply(as.list(seq_len(runs)), function(z) rand.row.matrix.int(x), simplify = FALSE)
+    rand <- t(sapply(x.rand, function(X) FD::dbFD(X, a)$FRic))
+  } else{
+    if(NULL.MODEL == 2){
+      # "phylogeny.pool"
+      x.rand <- sapply(as.list(seq_len(runs)), function(z) rand.row.matrix.int(x), simplify = FALSE)
+      comm.rand <- sapply(as.list(seq_len(runs)), function(z) picante::randomizeMatrix(a, null.model = "richness", iterations = iterations), simplify = FALSE)
+      rand <- t(sapply(as.list(seq_len(runs)), function(i) FD::dbFD(x.rand[[i]], comm.rand[[i]], ...)$FRic))
+    } else{
+      # "richness", "frequency", "independentswap" or "trialswap"
+      comm.rand <- sapply(as.list(seq_len(runs)), function(z) picante::randomizeMatrix(a, null.model = null.model, iterations = iterations), simplify = FALSE)
+      rand <- t(sapply(comm.rand, function(A) FD::dbFD(x, A, ...)$FRic))    
+    }
+  }
+  
+  
+  rand.mean <- apply(X = rand, MARGIN = 2, FUN = mean, na.rm = TRUE)
+  rand.sd <- apply(X = rand, MARGIN = 2, FUN = sd, na.rm = TRUE)
+  obs.z <- (obs - rand.mean)/rand.sd
+  
+  obs.rank <- apply(X = rbind(obs, rand), MARGIN = 2, FUN = rank)[1, ]
+  obs.rank <- ifelse(is.na(rand.mean), NA, obs.rank)
+  results <- data.frame(ntaxa = specnumber(a),
+                        obs,
+                        rand.mean,
+                        rand.sd,
+                        obs.rank,
+                        obs.z,
+                        obs.p = obs.rank/(runs + 1),
+                        row.names = row.names(a))
+  return(results)
+}
+
+# Argumentos
+# x - ver dbFD. NAO PODE SER UMA MATRIZ DE DISTANCIAS
+# a - ver dbFD
+# null.model - ver randomizeMatrix e ses.mpd. Exceto "sample.pool"
+# iterations - ver randomizeMatrix
+# runs - Number of randomizations
+# ... - Outros argumentos para dbFD
+
+# Exemplo
+ses.FDiv(dummy$trait, dummy$abun, null.model = "taxa.labels", iterations = 1000, runs = 10)
+ses.FDiv(dummy$trait, dummy$abun, null.model = "phylogeny.pool", iterations = 1000, runs = 10)
+ses.FDiv(dummy$trait, dummy$abun, null.model = "independentswap", iterations = 1000, runs = 10)
+
+# Funcao conforme ses.mpd (um copia e cola)
+# Some os modelos:
+# - "richness", "frequency", "independentswap" e "trialswap" aleatoriaza as comunidades usando a funcao randomizeMatrix
+# - "taxa.labels" aleatoriza as linhas da matriz dos atributos (linhas inteiras), mantem os nomes originais (so muda os valores dentro da matriz) 
+# - "phylogeny.pool" usa o modelo "richness" para aleatorizar as comunidades e aleatoriza as linhas da matriz dos atributos (linhas inteiras), mantem os nomes originais (so muda os valores dentro da matriz)
+
+#Comando:
+ses.FDiv(traits_1, comm_1, null.model = "phylogeny.pool", iterations = 1000, runs = 999)
